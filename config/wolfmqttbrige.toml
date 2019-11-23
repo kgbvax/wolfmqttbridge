@@ -1,0 +1,11 @@
+mqtt-server = "hassio.local"
+mqtt-root-topic = "/wolf"
+bridgeValues= [ "Vorlauftemperatur","Außentemperatur"]
+[mappings]
+3027842125 = "pwmpumpe"
+3027842126 = "vorlauftemperatur"
+3027842127 = "vorlaufsolltemperatur"
+3025954360 = "ruecklauftemperatur"
+3025954361 = "flamme"
+3025954329 = "aussentemperatur"
+3025954355 = "speichertemperatur"
