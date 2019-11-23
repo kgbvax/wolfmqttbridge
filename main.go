@@ -130,16 +130,25 @@ func doTheHustle(cmd string, token AuthToken, sessId int, system System) {
 
 				paramterValuesResponse := getParameterValues(token.AccessToken, sessId, valIdList, lastUpdate, system)
 				lastUpdate = paramterValuesResponse.LastAccess
-				for _, value := range paramterValuesResponse.Values {
+				for _, valueStruct := range paramterValuesResponse.Values {
 					found := false
 					for _, param := range params { //join with parameter meta
-						if param.ValueID == value.ValueID {
-							log.DEBUG("value response ", "name", param.Name, "value", value.Value)
+						if param.ValueID == valueStruct.ValueID {
 							found = true
+							value := valueStruct.Value
+							if len(param.ListItems) > 0 { // transform according to list item
+								for _, item := range param.ListItems {
+									if item.Value == value {
+										value = item.DisplayText
+									}
+								}
+							}
+							log.DEBUG("valueStruct response ", "name", param.Name, "value", value)
+
 						}
 					}
 					if found == false {
-						log.ERROR("value not found in parameterDescription", "valueID", value.ValueID)
+						log.ERROR("valueStruct not found in parameterDescription", "valueID", valueStruct.ValueID)
 					}
 
 				}

@@ -149,7 +149,7 @@ func sessionRefresh(bearerToken string, sessionid int) {
 
 	payload, _ := json.Marshal(sess)
 	for {
-		time.Sleep(6 * time.Second)
+		time.Sleep(60 * time.Second)
 		fmt.Println("refreshing session")
 
 		payLoadReader := bytes.NewReader(payload)
