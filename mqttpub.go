@@ -22,8 +22,8 @@ import (
 
 //define a function for the default message handler
 var f MQTT.MessageHandler = func(client MQTT.Client, msg MQTT.Message) {
-	log.Debug("TOPIC: %s\n", msg.Topic())
-	log.Debug("MSG: %s\n", msg.Payload())
+	log.Debug("TOPIC: ", msg.Topic())
+	log.Debug("MSG: ", msg.Payload())
 }
 
 func connectMQTT(host string,username string, password string) MQTT.Client {
