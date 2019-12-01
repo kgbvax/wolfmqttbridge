@@ -18,30 +18,34 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 )
 
-func getParameterValues(bearerToken string, sessionId int, valueIDList []int64, lastUpdate string, sys System) ParameterValuesResponse {
+func getParameterValues(bearerToken string, sessionId int, valueIDList []int64, lastUpdate string, sys System) (ParameterValuesResponse, error) {
 	reqPayload := ParameterValuesRequest{1000, false,
 		valueIDList,
 		sys.GatewayID, sys.ID,
 		"2019-11-22T19:35:06.7715496Z", false, sessionId}
+	response := ParameterValuesResponse{}
 	url := "https://www.wolf-smartset.com/portal/api/portal/GetParameterValues"
 	payload, _ := json.Marshal(reqPayload)
 	req, _ := http.NewRequest("POST", url, bytes.NewReader(payload))
 	setStdHeader(req, bearerToken, "application/json")
-	res, _ := http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return response,err
+	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
-	response := ParameterValuesResponse{}
 
-	json.Unmarshal([]byte(body), &response)
-	return response
+
+	err=json.Unmarshal([]byte(body), &response)
+	return response, err
 }
 
 type SystemStateRequest struct {
@@ -62,7 +66,7 @@ func getAuthToken(username string, password string) (AuthToken, error) {
 	req.Header.Add("cache-control", "no-cache")
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error(err)
 		return data, err
 	}
 	if res.StatusCode != 200 {
@@ -79,32 +83,53 @@ func getAuthToken(username string, password string) (AuthToken, error) {
 
 func getSystemList(bearerToken string) (SystemList, error) {
 	url := "https://www.wolf-smartset.com/portal/api/portal/GetSystemList"
+	data := SystemList{}
 
-	req, _ := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", url, nil)
+	if err!=nil {
+		log.Error(err)
+		return data,err
+	}
 	setStdHeader(req, bearerToken, "")
 
-	res, _ := http.DefaultClient.Do(req)
-
+	res, err := http.DefaultClient.Do(req)
+	if err!=nil {
+		log.Error(err)
+		return data,err
+	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
 
-	data := SystemList{}
-	err := json.Unmarshal([]byte(body), &data)
+	err = json.Unmarshal([]byte(body), &data)
+	if err!=nil {
+		log.Error(err)
+		return data,err
+	}
 	return data, err
 }
 
 func getGUIDescriptionForGateway(bearerToken string, gatewayId int, systemId int) (GuiDescription, error) {
 	url := fmt.Sprintf("https://www.wolf-smartset.com/portal/api/portal/GetGuiDescriptionForGateway?GatewayId=%d&SystemId=%d", gatewayId, systemId)
+	data := GuiDescription{}
 
-	req, _ := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", url, nil)
+	if err!=nil {
+		log.Error(err)
+		return data,err
+	}
 
 	setStdHeader(req, bearerToken, "")
-	res, _ := http.DefaultClient.Do(req) //@TODO error handling
-	defer res.Body.Close()
-	body, _ := ioutil.ReadAll(res.Body) //@TODO error handling
+	res, err := http.DefaultClient.Do(req)
+	if err!=nil {
+		log.Error(err)
+		return data,err
+	}
+		defer res.Body.Close()
+		body, _ := ioutil.ReadAll(res.Body) //@TODO error handling
 
-	data := GuiDescription{}
-	err := json.Unmarshal([]byte(body), &data)
+		err = json.Unmarshal([]byte(body), &data)
+
+
 	return data, err
 }
 

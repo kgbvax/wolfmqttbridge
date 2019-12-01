@@ -14,4 +14,36 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-//import "github.com/eclipse/paho.mqtt.golang"
+import (
+	log "github.com/sirupsen/logrus"
+
+	MQTT "github.com/eclipse/paho.mqtt.golang"
+)
+
+//define a function for the default message handler
+var f MQTT.MessageHandler = func(client MQTT.Client, msg MQTT.Message) {
+	log.Debug("TOPIC: %s\n", msg.Topic())
+	log.Debug("MSG: %s\n", msg.Payload())
+}
+
+func connectMQTT(host string,username string, password string) MQTT.Client {
+	opts := MQTT.NewClientOptions().AddBroker(host)
+	opts.SetClientID("wolfmqttbridge")
+	opts.SetDefaultPublishHandler(f)
+	opts.SetAutoReconnect(true)
+	opts.SetPassword(password)
+	opts.SetUsername(username)
+	//create and start a client using the above ClientOptions
+	c := MQTT.NewClient(opts)
+	if token := c.Connect(); token.Wait() && token.Error() != nil {
+		panic(token.Error())
+	}
+	return c
+}
+
+func pub(cl MQTT.Client, topic string, payload string) {
+	log.Debug("topic: ",topic, " payload: ",payload)
+	if token := cl.Publish(topic,1,false,payload) ; token.Wait() && token.Error() != nil {
+		log.Fatal(token.Error())
+	}
+}
