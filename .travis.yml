@@ -5,3 +5,9 @@ services:
 
 before_install:
   - docker build -t  wolfmqttbridge .
+
+before_script:
+  provider: script
+  script: bash docker_push
+  on:
+    branch: master
