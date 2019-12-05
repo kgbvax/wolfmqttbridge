@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/bgentry/speakeasy"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+	MQTT "github.com/eclipse/paho.mqtt.golang"
 	graylog "github.com/gemnasium/logrus-graylog-hook"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -31,6 +31,7 @@ import (
 
 var app = kingpin.New("wolfmqttbridge", "Wolf Smartset MQTT Bridge, see github.com/kgbvax/wolfmqttbridge for documentation.")
 var debug = app.Flag("debug", "Enable debug mode. Env: DEBUG").Envar("DEBUG").Short('d').Bool()
+var trace = app.Flag("trace","Enable trace mode. Env: TRACE").Envar("TRACE").Bool()
 var grayLogAddr = app.Flag("graylogGELFAdr", "Address of GELF logging server as 'address:port'. Env: GRAYLOG").Envar("GRAYLOG").Short('g').String()
 var wolf_user = app.Flag("user", "username at wolf-smartset.com. Env: WOLF_USER").Envar("WOLF_USER").String()
 var wolf_pw = app.Flag("password", "Password for wolf-smartset.com. Env: WOLF_PW").Envar("WOLF_PW").String()
@@ -41,7 +42,7 @@ var mqttHost = brCmd.Flag("broker", "address of MQTT broker to connect to, e.g. 
 var mqttUsername = brCmd.Flag("mqttUser", "username for mqtt broker. Env: BROKER_USER").Envar("BROKER_USER").String()
 var mqttPassword = brCmd.Flag("mqttPassword", "password for mqtt broker user. Env: BROKER_PW").Envar("BROKER_PW").String()
 var haDiscoveryTopic = brCmd.Flag("haDiscovery", "Home Assistant MQTT discovery topic, defaults to 'homeassistant'").Default("homeassistant").String()
-
+var brReadOnly = brCmd.Flag("ro","Read-Only mode - don't write to MQTT (for testing").Default("false").Bool()
 var mqttRootTopic = brCmd.Flag("topic", "root topic, defaults to /wolf").Envar("WOLF_MQTT_ROOT_TOPIC").Default("/wolf").String()
 
 func main() {
@@ -52,6 +53,9 @@ func main() {
 
 	if *debug == true {
 		log.SetLevel(log.DebugLevel)
+	}
+	if *trace == true {
+		log.SetLevel(log.TraceLevel)
 	}
 
 	if len(*grayLogAddr) > 0 {
@@ -69,14 +73,14 @@ func main() {
 	aTok, err := getAuthToken(*wolf_user, *wolf_pw)
 	if err != nil {
 		fmt.Println(err.Error())
-		os.Exit(-1) //&bail out
+		os.Exit(ErrWolfToken) //&bail out
 	}
 
 	log.Debug("create session")
 	sessId, err := createSession(aTok.AccessToken)
 	if err != nil {
 		fmt.Println(err.Error())
-		os.Exit(-1) //&bail out
+		os.Exit(ErrSession) //&bail out
 	}
 
 	go sessionRefresh(aTok.AccessToken, sessId)
@@ -90,7 +94,7 @@ func main() {
 
 	if len(sysList) < 1 {
 		fmt.Println("System list is empty, nothing to do.")
-		os.Exit(0)
+		os.Exit(ErrSysListEmpty)
 	}
 
 	//blindly pick the first system
@@ -110,7 +114,7 @@ func askPw() string {
 	pw, err := speakeasy.Ask("password: ")
 	if err != nil {
 		log.Println(err)
-		os.Exit(1)
+		os.Exit(-2)
 	}
 	return pw
 }
@@ -128,14 +132,22 @@ func doTheHustle(cmd string, token AuthToken, sessId int, system System) {
 		{
 			log.Debug("start bridge")
 			lastUpdate := "2019-11-22" //some date in the past
-			log.Debug("connecting to mqtt broker at ", *mqttHost)
-			client := connectMQTT(*mqttHost, *mqttUsername, *mqttPassword)
+			var client MQTT.Client
+			if *brReadOnly== true {
+				log.Info("Read-only mode, skip MQTT init")
+			} else {
+				log.Debug("connecting to mqtt broker at ", *mqttHost)
+				client = connectMQTT(*mqttHost, *mqttUsername, *mqttPassword)
+			}
 			guiDescription, err := getGUIDescriptionForGateway(token.AccessToken, system.GatewayID, system.ID)
 			if err != nil {
 				log.Error(err)
+				os.Exit(ErrGuiDescription)
 			}
 			params := getPollParams(guiDescription)
-			registerHADiscovery(params, client, *haDiscoveryTopic)
+			if (!*brReadOnly) {
+				registerHADiscovery(params, client, *haDiscoveryTopic)
+			}
 
 			for {
 				var valIdList []int64
@@ -160,8 +172,10 @@ func doTheHustle(cmd string, token AuthToken, sessId int, system System) {
 							}
 							localTopic := makeTopic(param.Name)
 
-							log.Debug("valueStruct response ", localTopic, "=", value)
-							pub(client, localTopic, value)
+							//log.Debug("valueStruct response ", localTopic, "=", value)
+							if (!*brReadOnly) {
+								pub(client, localTopic, value)
+							}
 						}
 					}
 					if found == false {
@@ -192,7 +206,7 @@ type MqttDiscoveryMsg struct {
 	SwVersion			string `json:"sw_version"`
 }
 
-func registerHADiscovery(descriptors []ParameterDescriptor, client mqtt.Client, discoveryTopic string) {
+func registerHADiscovery(descriptors []ParameterDescriptor, client MQTT.Client, discoveryTopic string) {
 	var wolfPrefix = "wolf-"
     discoPrefix:="homeassistant"
 
@@ -211,7 +225,9 @@ func registerHADiscovery(descriptors []ParameterDescriptor, client mqtt.Client, 
 		if err != nil {
 			log.Error(err)
 		} else {
-			pub(client,configTopic,string(json))
+			if (!*brReadOnly) {
+				pub(client,configTopic,string(json))
+			}
 		}
 
 	}

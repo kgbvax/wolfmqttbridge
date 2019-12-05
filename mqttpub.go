@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
 	log "github.com/sirupsen/logrus"
+	"os"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
@@ -36,13 +37,14 @@ func connectMQTT(host string,username string, password string) MQTT.Client {
 	//create and start a client using the above ClientOptions
 	c := MQTT.NewClient(opts)
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
+		log.Fatal(token.Error())
+		os.Exit(-1)
 	}
 	return c
 }
 
 func pub(cl MQTT.Client, topic string, payload string) {
-	log.Debug("topic: ",topic, " payload: ",payload)
+	log.Debug("topic: ",topic, " :: ",payload)
 	if token := cl.Publish(topic,1,false,payload) ; token.Wait() && token.Error() != nil {
 		log.Fatal(token.Error())
 	}
