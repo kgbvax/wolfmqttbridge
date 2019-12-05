@@ -6,4 +6,4 @@ before_install:
   - docker build -t  wolfmqttbridge .
 
 install:
-  - docker_push
+  - ./scripts/docker_push
