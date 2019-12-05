@@ -1,6 +1,6 @@
-# wolfmqttbridge
+# wolfmqttbridge [![Build Status](https://travis-ci.org/kgbvax/wolfmqttbridge.svg?branch=master)](https://travis-ci.org/kgbvax/wolfmqttbridge)
+
 WOLF Smartset MQTT Bridge
-[![Build Status](https://travis-ci.org/kgbvax/wolfmqttbridge.svg?branch=master)](https://travis-ci.org/kgbvax/wolfmqttbridge)
 
 # ENVIRONMENT
 To support running in a bare container, most args can be passed in as Environment variables:
