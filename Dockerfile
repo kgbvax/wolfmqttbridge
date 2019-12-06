@@ -36,7 +36,7 @@ COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /wolfmqttbridge /wolfmqttbridge
 
 #COPY certs roots required to validate outbound HTTPS requests
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 # Use an unprivileged user.
 USER appuser
 # Run the binary.
