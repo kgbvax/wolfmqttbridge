@@ -9,7 +9,7 @@ When enabled in Home-Assitant (or you are using HASS.IO the Mosquitto broker add
 
 This works with my Wolf CFS20 and a Wolflink Pro, everything else _may_ work or not.
 
-Update rate is hard-wired to 20 seconds (which I hope is acceptable since the Wolf-Smartset polls data every 10 seconds)
+Update rate defaults to 20 seconds (which I hope is acceptable since the Wolf-Smartset polls data every 10 seconds)
 ## What works
 * Talk to Wolf-Smartset.com portal (re-engineered API, if there is a spec for this)
 * Emit auto-confguration MQTT messages for home-assistant
@@ -38,3 +38,9 @@ To run this as container on hass.io, use e.g. the Portainer add-on and configure
 * Network: Add this to the "hassio" network
 * Restart Policy: On Failure / 5 (recommended)
 * Resources: As you like should work with 64MB and some tiny CPU
+
+## MQTT Topics
+* Topics for values are auto-generated like this: 
+   ```wolf/<Value-Name>/state```
+    The root topic can be overwritten using WOLF_MQTT_ROOT_TOPIC environment or --rootTopic. Value-Name is the value as it appears on the GUI, (with spaces removed).  Payload is the raw value (as string)
+*  Default topic for home-assistant MQTT discovery is ```homeassistant``` (which is HA's default). This can be changed with HA_DISCO_TOPIC or --haDiscoTopic

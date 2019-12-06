@@ -23,7 +23,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 )
 
 func getParameterValues(bearerToken string, sessionId int, valueIDList []int64, lastUpdate string, sys System) (ParameterValuesResponse, error) {
@@ -40,15 +39,14 @@ func getParameterValues(bearerToken string, sessionId int, valueIDList []int64, 
 	}
 
 	log.Trace("about to request parameterValues from ",url)
+	log.Trace("request: ",string(payload))
+
 	req, err := http.NewRequest("POST", url, bytes.NewReader(payload))
 	if err!=nil {
 		log.Error("error creating request " , err)
-
 		return response,err
-
 	}
 	setStdHeader(req, bearerToken, "application/json")
-	log.Trace("header set")
 	res, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -60,14 +58,24 @@ func getParameterValues(bearerToken string, sessionId int, valueIDList []int64, 
 	}
 	defer res.Body.Close()
 
+	log.Trace("status ",res.Status)
+
 	body, err := ioutil.ReadAll(res.Body)
 	if err!=nil {
 		log.Error("error reading response ",err)
 		return response,err
 	}
+	log.Trace("response ",string(body))
+
 	err = json.Unmarshal([]byte(body), &response)
 	if err!=nil {
 		log.Error("error unmarshalling response ",err)
+	}
+
+	if res.StatusCode!=200 {
+		log.Warn("recieved status ",res.Status)
+		log.Debug("response ",string(body))
+
 	}
 	return response, err
 }
@@ -204,30 +212,41 @@ func createSession(bearerToken string) (int, error) {
 func sessionRefresh(bearerToken string, sessionid int) {
 	sess := SessionStr{sessionid}
 	url := "https://www.wolf-smartset.com/portal/api/portal/UpdateSession"
-	log.Debug("SessionId: ", sessionid)
 
-	payload, _ := json.Marshal(sess)
-	for {
-		time.Sleep(60 * time.Second)
-		log.Debug("refreshing session")
+	payload, err := json.Marshal(sess)
+	if err != nil {
+		log.Error("failed to marshal session")
+	}
+	log.Debug("refreshing session")
 
-		payLoadReader := bytes.NewReader(payload)
-		req, err := http.NewRequest("POST", url, payLoadReader)
-		if err != nil {
-			log.Error(err.Error())
-		}
-		setStdHeader(req, bearerToken, "application/json")
-		res, err := http.DefaultClient.Do(req)
+	payLoadReader := bytes.NewReader(payload)
+	log.Trace("request ",string(payload))
+	req, err := http.NewRequest("POST", url, payLoadReader)
+	if err != nil {
+		log.Error(err.Error())
+	}
 
-		if err != nil {
-			log.Error(err)
-		} else {
-			if res!=nil {
-				res.Body.Close()
-			}
+	setStdHeader(req, bearerToken, "application/json")
+	res, err := http.DefaultClient.Do(req)
+
+ 	if err != nil {
+		log.Error(err)
+	} else {
+		if res!=nil {
+			res.Body.Close()
 		}
 	}
+
+	if log.IsLevelEnabled(log.TraceLevel) {
+		body,_:= ioutil.ReadAll(res.Body)
+		log.Trace("response ",string(body))
+	}
+
+	if res.StatusCode != 200 {
+		log.Warn("irregular refresh status ",res.Status)
+	}
 }
+
 
 func setStdHeader(request *http.Request, bearerToken string, contentType string) {
 	request.Header.Add("Content-Type", contentType)

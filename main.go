@@ -20,6 +20,7 @@ import (
 	"github.com/bgentry/speakeasy"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	graylog "github.com/gemnasium/logrus-graylog-hook"
+	"github.com/matryer/runner"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
@@ -41,9 +42,10 @@ var brCmd = app.Command("br", "start bridge").Default()
 var mqttHost = brCmd.Flag("broker", "address of MQTT broker to connect to, e.g. tcp://mqtt.eclipse.org:1883. Env: BROKER").Envar("BROKER").String()
 var mqttUsername = brCmd.Flag("mqttUser", "username for mqtt broker. Env: BROKER_USER").Envar("BROKER_USER").String()
 var mqttPassword = brCmd.Flag("mqttPassword", "password for mqtt broker user. Env: BROKER_PW").Envar("BROKER_PW").String()
-var haDiscoveryTopic = brCmd.Flag("haDiscovery", "Home Assistant MQTT discovery topic, defaults to 'homeassistant'").Default("homeassistant").String()
+var haDiscoveryTopic = brCmd.Flag("haDiscoTopic", "Home Assistant MQTT discovery topic, defaults to 'homeassistant'").Envar("HA_DISCO_TOPIC").Default("homeassistant").String()
 var brReadOnly = brCmd.Flag("ro","Read-Only mode - don't write to MQTT (for testing").Default("false").Bool()
-var mqttRootTopic = brCmd.Flag("topic", "root topic, defaults to /wolf").Envar("WOLF_MQTT_ROOT_TOPIC").Default("/wolf").String()
+var mqttRootTopic = brCmd.Flag("rooTopic", "root topic, defaults to /wolf").Envar("WOLF_MQTT_ROOT_TOPIC").Default("wolf").String()
+var pollInterval = brCmd.Flag("pollEvery","poll every X seconds. Must be >10, defaults to 20").Default("20").Envar("POLL_EVERY").Int()
 
 func main() {
 	kingpin.UsageTemplate(kingpin.CompactUsageTemplate).Version("1.0").Author("vax@kgbvax.net")
@@ -58,6 +60,11 @@ func main() {
 		log.SetLevel(log.TraceLevel)
 	}
 
+	if *pollInterval <10 {
+		log.Warn("poll interval is shorter than 10sec. Setting to 10sec to prevent excessive API load")
+		*pollInterval=10
+	}
+
 	if len(*grayLogAddr) > 0 {
 		log.Info("Logging to Graylog: ", *grayLogAddr)
 		hook := graylog.NewAsyncGraylogHook(*grayLogAddr, map[string]interface{}{})
@@ -69,6 +76,11 @@ func main() {
 		*wolf_pw = askPw()
 	}
 
+
+	doTheHustle(cmd)
+}
+
+func connectWolfSmartset() (AuthToken, int, System, *runner.Task) {
 	log.Debug("obtain auth token ", "user", *wolf_user)
 	aTok, err := getAuthToken(*wolf_user, *wolf_pw)
 	if err != nil {
@@ -83,7 +95,23 @@ func main() {
 		os.Exit(ErrSession) //&bail out
 	}
 
-	go sessionRefresh(aTok.AccessToken, sessId)
+
+	task:= runner.Go ( func(shouldStop runner.S, ) error {
+		// do setup work
+		defer func(){
+			// do tear-down work
+		}()
+		for {
+			time.Sleep(60 * time.Second)
+
+			sessionRefresh(aTok.AccessToken, sessId)
+
+			if shouldStop() {
+				break
+			}
+		}
+		return nil // no errors
+	})
 
 	log.Debug("get system list")
 	sysList, err := getSystemList(aTok.AccessToken)
@@ -104,8 +132,7 @@ func main() {
 	log.Info("System Name: ", system.Name)
 	log.Info("Gateway ID: ", system.GatewayID)
 	log.Info("Gateway Software Version: ", system.GatewaySoftwareVersion)
-
-	doTheHustle(cmd, aTok, sessId, system)
+	return aTok, sessId, system,task
 }
 
 // Ask for a user's password
@@ -119,19 +146,30 @@ func askPw() string {
 	return pw
 }
 
-func doTheHustle(cmd string, token AuthToken, sessId int, system System) {
+func doTheHustle(cmd string) {
+	var token AuthToken
+
 	log.Debug("main cmd: ", cmd)
 	switch cmd {
 	case listParamCmd.FullCommand():
 		{
+			_, _, system, task :=connectWolfSmartset()
 			guiDescription, _ := getGUIDescriptionForGateway(token.AccessToken, system.GatewayID, system.ID)
 			printGuiParameters(guiDescription)
+			task.Stop()
 		}
 
 	case brCmd.FullCommand():
 		{
+			var needsConnection bool = true
+
+
+			var sessId int
+			var system System
+		    var backgroundRefreshTask *runner.Task
+
 			log.Debug("start bridge")
-			lastUpdate := "2019-11-22" //some date in the past
+			lastUpdate := "2019-12-06T18:11:40.3881067Z"
 			var client MQTT.Client
 			if *brReadOnly== true {
 				log.Info("Read-only mode, skip MQTT init")
@@ -139,25 +177,43 @@ func doTheHustle(cmd string, token AuthToken, sessId int, system System) {
 				log.Debug("connecting to mqtt broker at ", *mqttHost)
 				client = connectMQTT(*mqttHost, *mqttUsername, *mqttPassword)
 			}
-			guiDescription, err := getGUIDescriptionForGateway(token.AccessToken, system.GatewayID, system.ID)
-			if err != nil {
-				log.Error(err)
-				os.Exit(ErrGuiDescription)
-			}
-			params := getPollParams(guiDescription)
-			if (!*brReadOnly) {
-				registerHADiscovery(params, client, *haDiscoveryTopic)
-			}
+			var valIdList []int64
+			var params []ParameterDescriptor
+			var guiDescription GuiDescription
+			var err error
 
 			for {
-				var valIdList []int64
-				for _, param := range params {
-					valIdList = append(valIdList, param.ValueID)
+				if needsConnection {
+					if backgroundRefreshTask != nil {
+						backgroundRefreshTask.Stop()
+					}
+
+					token, sessId, system, backgroundRefreshTask = connectWolfSmartset( )
+					guiDescription, err = getGUIDescriptionForGateway(token.AccessToken, system.GatewayID, system.ID)
+					params = getPollParams(guiDescription)
+					if err != nil {
+						log.Error(err)
+						os.Exit(ErrGuiDescription)
+					}
+					if !*brReadOnly {
+						registerHADiscovery(params, client, *haDiscoveryTopic)
+					}
+					needsConnection = false
+
+					for _, param := range params {
+						valIdList = append(valIdList, param.ValueID)
+					}
 				}
 
-				paramterValuesResponse, _ := getParameterValues(token.AccessToken, sessId, valIdList, lastUpdate, system)
-				lastUpdate = paramterValuesResponse.LastAccess
-				for _, valueStruct := range paramterValuesResponse.Values {
+
+
+				parameterValuesResponse, err := getParameterValues(token.AccessToken, sessId, valIdList, lastUpdate, system)
+				if err!=nil {
+					log.Warn("failed to obtain parameters. attempting reconnect. Error= ",err)
+					needsConnection=true
+				} else {
+				lastUpdate = parameterValuesResponse.LastAccess
+				for _, valueStruct := range parameterValuesResponse.Values {
 					found := false
 					for _, param := range params { //join with parameter meta
 						if param.ValueID == valueStruct.ValueID {
@@ -182,7 +238,9 @@ func doTheHustle(cmd string, token AuthToken, sessId int, system System) {
 						log.Error("valueStruct not found in parameterDescription, valueId=", valueStruct.ValueID)
 					}
 				}
-				time.Sleep(20 * time.Second)
+				}
+				log.Trace("sleeping ",*pollInterval)
+				time.Sleep(time.Duration(*pollInterval) * time.Second)
 			}
 		}
 	}
