@@ -202,6 +202,7 @@ type MqttDiscoveryMsg struct {
 	State_topic         string `json:"state_topic"`
 	Unit_of_measurement string `json:"unit_of_measurement"`
 	Unique_id           string `json:"unique_id"`
+	Expire_after	    int    `json:"expire_after"`
 	Qos                 int    `json:"qos"`
 	SwVersion			string `json:"sw_version"`
 }
@@ -220,6 +221,7 @@ func registerHADiscovery(descriptors []ParameterDescriptor, client MQTT.Client, 
 		newDisco.State_topic = makeTopic(param.Name)
 		newDisco.Qos=2
 		newDisco.SwVersion="1.0"
+		newDisco.Expire_after=120 //seconds
 		configTopic:=discoPrefix+"/sensor/"+newDisco.Unique_id+"/config"
 		json,err := json.Marshal(newDisco)
 		if err != nil {
