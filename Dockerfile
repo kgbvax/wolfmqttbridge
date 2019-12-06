@@ -27,6 +27,9 @@ FROM scratch
 COPY --from=builder /etc/passwd /etc/passwd
 # Copy our static executable.
 COPY --from=builder /wolfmqttbridge /wolfmqttbridge
+
+#COPY certs roots required to validate outbound HTTPS requests
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs
 # Use an unprivileged user.
 USER appuser
 # Run the binary.
