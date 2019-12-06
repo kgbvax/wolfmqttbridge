@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/jedib0t/go-pretty/table"
-	"os"
+	log "github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -124,7 +124,8 @@ func getPollParams(d GuiDescription) []ParameterDescriptor {
 
 func printGuiParameters(d GuiDescription) {
 	t := table.NewWriter()
-	t.SetOutputMirror(os.Stdout)
+	//t.SetOutputMirror(os.Stdout)
+
 	t.AppendHeader(table.Row{"Menu", "Tab", "ValueID", "ParameterID", "Name", "Group", "Unit", "Value", "Options"})
 	for _, menuItem := range d.MenuItems {
 		for _, tabView := range menuItem.TabViews {
@@ -159,5 +160,5 @@ func printGuiParameters(d GuiDescription) {
 		}
 	}
 	t.SetStyle(table.StyleLight)
-	t.Render()
+	log.Info("GUI Description:\n",t.Render())
 }

@@ -190,6 +190,7 @@ func doTheHustle(cmd string) {
 
 					token, sessId, system, backgroundRefreshTask = connectWolfSmartset( )
 					guiDescription, err = getGUIDescriptionForGateway(token.AccessToken, system.GatewayID, system.ID)
+					printGuiParameters(guiDescription)
 					params = getPollParams(guiDescription)
 					if err != nil {
 						log.Error(err)
