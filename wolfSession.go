@@ -25,32 +25,38 @@ import (
 	"strings"
 )
 
+const (
+	refreshSessionURL  = "https://www.wolf-smartset.com/portal/api/portal/UpdateSession"
+	authenticateURL    = "https://www.wolf-smartset.com/portal/connect/token2"
+	parameterValuesURL = "https://www.wolf-smartset.com/portal/api/portal/GetParameterValues"
+	createSessionURL   = "https://www.wolf-smartset.com/portal/api/portal/CreateSession"
+)
+
 func getParameterValues(bearerToken string, sessionId int, valueIDList []int64, lastUpdate string, sys System) (ParameterValuesResponse, error) {
 	reqPayload := ParameterValuesRequest{1000, false,
 		valueIDList,
 		sys.GatewayID, sys.ID,
 		"2019-11-22T19:35:06.7715496Z", false, sessionId}
 	response := ParameterValuesResponse{}
-	url := "https://www.wolf-smartset.com/portal/api/portal/GetParameterValues"
 	payload, err := json.Marshal(reqPayload)
-	if err!=nil {
-		log.Error("error marshalloing request: ",err)
-		return response,err
+	if err != nil {
+		log.Error("error marshalloing request: ", err)
+		return response, err
 	}
 
-	log.Trace("about to request parameterValues from ",url)
-	log.Trace("request: ",string(payload))
+	log.Trace("about to request parameterValues from ", parameterValuesURL)
+	log.Trace("request: ", string(payload))
 
-	req, err := http.NewRequest("POST", url, bytes.NewReader(payload))
-	if err!=nil {
-		log.Error("error creating request " , err)
-		return response,err
+	req, err := http.NewRequest("POST", parameterValuesURL, bytes.NewReader(payload))
+	if err != nil {
+		log.Error("error creating request ", err)
+		return response, err
 	}
 	setStdHeader(req, bearerToken, "application/json")
 	res, err := http.DefaultClient.Do(req)
 
 	if err != nil {
-		log.Error("parmeterValues request failed ",err)
+		log.Error("parmeterValues request failed ", err)
 		if res != nil {
 			res.Body.Close()
 		}
@@ -58,23 +64,23 @@ func getParameterValues(bearerToken string, sessionId int, valueIDList []int64, 
 	}
 	defer res.Body.Close()
 
-	log.Trace("status ",res.Status)
+	log.Trace("status ", res.Status)
 
 	body, err := ioutil.ReadAll(res.Body)
-	if err!=nil {
-		log.Error("error reading response ",err)
-		return response,err
+	if err != nil {
+		log.Error("error reading response ", err)
+		return response, err
 	}
-	log.Trace("response ",string(body))
+	log.Trace("response ", string(body))
 
 	err = json.Unmarshal([]byte(body), &response)
-	if err!=nil {
-		log.Error("error unmarshalling response ",err)
+	if err != nil {
+		log.Error("error unmarshalling response ", err)
 	}
 
-	if res.StatusCode!=200 {
-		log.Warn("recieved status ",res.Status)
-		log.Debug("response ",string(body))
+	if res.StatusCode != 200 {
+		log.Warn("recieved status ", res.Status)
+		log.Debug("response ", string(body))
 
 	}
 	return response, err
@@ -89,15 +95,14 @@ type SystemStateRequest struct {
 }
 
 func getAuthToken(username string, password string) (AuthToken, error) {
-	url := "https://www.wolf-smartset.com/portal/connect/token2"
 	data := AuthToken{}
 
 	payload := strings.NewReader(fmt.Sprintf("grant_type=password&username=%s&password=%s&scope=all", username, password))
-	req, _ := http.NewRequest("POST", url, payload)
+	req, _ := http.NewRequest("POST", authenticateURL, payload)
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 	req.Header.Add("cache-control", "no-cache")
 	res, err := http.DefaultClient.Do(req)
-	if (res!=nil) {
+	if res != nil {
 		defer res.Body.Close()
 	}
 
@@ -178,11 +183,10 @@ func getGUIDescriptionForGateway(bearerToken string, gatewayId int, systemId int
 }
 
 func createSession(bearerToken string) (int, error) {
-	url := "https://www.wolf-smartset.com/portal/api/portal/CreateSession"
 
 	payload := strings.NewReader("{\n    \"Timestamp\": \"2019-11-04 21:53:50\"\n}")
 
-	req, _ := http.NewRequest("POST", url, payload)
+	req, _ := http.NewRequest("POST", createSessionURL, payload)
 
 	req.Header.Add("content-type", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", bearerToken))
@@ -211,7 +215,6 @@ func createSession(bearerToken string) (int, error) {
 
 func sessionRefresh(bearerToken string, sessionid int) {
 	sess := SessionStr{sessionid}
-	url := "https://www.wolf-smartset.com/portal/api/portal/UpdateSession"
 
 	payload, err := json.Marshal(sess)
 	if err != nil {
@@ -220,8 +223,8 @@ func sessionRefresh(bearerToken string, sessionid int) {
 	log.Debug("refreshing session")
 
 	payLoadReader := bytes.NewReader(payload)
-	log.Trace("request ",string(payload))
-	req, err := http.NewRequest("POST", url, payLoadReader)
+	log.Trace("request ", string(payload))
+	req, err := http.NewRequest("POST", refreshSessionURL, payLoadReader)
 	if err != nil {
 		log.Error(err.Error())
 	}
@@ -229,24 +232,23 @@ func sessionRefresh(bearerToken string, sessionid int) {
 	setStdHeader(req, bearerToken, "application/json")
 	res, err := http.DefaultClient.Do(req)
 
- 	if err != nil {
+	if err != nil {
 		log.Error(err)
 	} else {
-		if res!=nil {
+		if res != nil {
 			res.Body.Close()
 		}
 	}
 
 	if log.IsLevelEnabled(log.TraceLevel) {
-		body,_:= ioutil.ReadAll(res.Body)
-		log.Trace("response ",string(body))
+		body, _ := ioutil.ReadAll(res.Body)
+		log.Trace("response ", string(body))
 	}
 
 	if res.StatusCode != 200 {
-		log.Warn("irregular refresh status ",res.Status)
+		log.Warn("irregular refresh status ", res.Status)
 	}
 }
-
 
 func setStdHeader(request *http.Request, bearerToken string, contentType string) {
 	request.Header.Add("Content-Type", contentType)
