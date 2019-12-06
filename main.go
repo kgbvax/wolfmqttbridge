@@ -34,8 +34,8 @@ var app = kingpin.New("wolfmqttbridge", "Wolf Smartset MQTT Bridge, see github.c
 var debug = app.Flag("debug", "Enable debug mode. Env: DEBUG").Envar("DEBUG").Short('d').Bool()
 var trace = app.Flag("trace","Enable trace mode. Env: TRACE").Envar("TRACE").Bool()
 var grayLogAddr = app.Flag("graylogGELFAdr", "Address of GELF logging server as 'address:port'. Env: GRAYLOG").Envar("GRAYLOG").Short('g').String()
-var wolf_user = app.Flag("user", "username at wolf-smartset.com. Env: WOLF_USER").Envar("WOLF_USER").String()
-var wolf_pw = app.Flag("password", "Password for wolf-smartset.com. Env: WOLF_PW").Envar("WOLF_PW").String()
+var wolfUser = app.Flag("user", "username at wolf-smartset.com. Env: WOLF_USER").Envar("WOLF_USER").String()
+var wolfPw = app.Flag("password", "Password for wolf-smartset.com. Env: WOLF_PW").Envar("WOLF_PW").String()
 
 var listParamCmd = app.Command("list", "list parameters available in gateway")
 var brCmd = app.Command("br", "start bridge").Default()
@@ -72,8 +72,8 @@ func main() {
 		log.AddHook(hook)
 	}
 
-	if wolf_pw == nil {
-		*wolf_pw = askPw()
+	if wolfPw == nil {
+		*wolfPw = askPw()
 	}
 
 
@@ -81,8 +81,8 @@ func main() {
 }
 
 func connectWolfSmartset() (AuthToken, int, System, *runner.Task) {
-	log.Debug("obtain auth token ", "user", *wolf_user)
-	aTok, err := getAuthToken(*wolf_user, *wolf_pw)
+	log.Debug("obtain auth token ", "user", *wolfUser)
+	aTok, err := getAuthToken(*wolfUser, *wolfPw)
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(ErrWolfToken) //&bail out
@@ -257,12 +257,12 @@ func sanitizeParamName(paramName string) string {
 }
 
 type MqttDiscoveryMsg struct {
-	Name                string `json:"name"`
-	State_topic         string `json:"state_topic"`
-	Unit_of_measurement string `json:"unit_of_measurement"`
-	Unique_id           string `json:"unique_id"`
-	Expire_after	    int    `json:"expire_after"`
-	Qos                 int    `json:"qos"`
+	Name              string `json:"name"`
+	StateTopic        string `json:"state_topic"`
+	UnitOfMeasurement string `json:"unit_of_measurement"`
+	UniqueId          string `json:"unique_id"`
+	ExpireAfter       int    `json:"expire_after"`
+	Qos               int    `json:"qos"`
 	//SwVersion	    string `json:"sw_version"`
 }
 
@@ -274,23 +274,21 @@ func registerHADiscovery(descriptors []ParameterDescriptor, client MQTT.Client, 
 		var newDisco = &MqttDiscoveryMsg{}
 		newDisco.Name = param.Name
 		if len(param.Unit) > 0 {
-			newDisco.Unit_of_measurement = param.Unit
+			newDisco.UnitOfMeasurement = param.Unit
 		}
-		newDisco.Unique_id = wolfPrefix + param.Name
-		newDisco.State_topic = makeTopic(param.Name)
+		newDisco.UniqueId = wolfPrefix + param.Name
+		newDisco.StateTopic = makeTopic(param.Name)
 		newDisco.Qos=2
 		//newDisco.SwVersion="1.0"
-		newDisco.Expire_after=120 //seconds
-		configTopic:=discoPrefix+"/sensor/"+newDisco.Unique_id+"/config"
-		json,err := json.Marshal(newDisco)
+		newDisco.ExpireAfter =120 //seconds
+		configTopic:=discoPrefix+"/sensor/"+newDisco.UniqueId +"/config"
+		discoJson,err := json.Marshal(newDisco)
 		if err != nil {
 			log.Error(err)
 		} else {
 			if (!*brReadOnly) {
-				pub(client,configTopic,string(json))
+				pub(client,configTopic,string(discoJson))
 			}
 		}
-
 	}
-
 }

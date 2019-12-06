@@ -168,11 +168,12 @@ func getGUIDescriptionForGateway(bearerToken string, gatewayId int, systemId int
 		return data, err
 	}
 	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body) //@TODO error handling
+	var body, err = ioutil.ReadAll(res.Body)
 	if err != nil {
 		log.Error(err)
 		return data, err
 	}
+
 	err = json.Unmarshal([]byte(body), &data)
 	if err != nil {
 		log.Error(err)
@@ -183,11 +184,8 @@ func getGUIDescriptionForGateway(bearerToken string, gatewayId int, systemId int
 }
 
 func createSession(bearerToken string) (int, error) {
-
 	payload := strings.NewReader("{\n    \"Timestamp\": \"2019-11-04 21:53:50\"\n}")
-
 	req, _ := http.NewRequest("POST", createSessionURL, payload)
-
 	req.Header.Add("content-type", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", bearerToken))
 	req.Header.Add("User-Agent", "github.com/kgbvax/wolfmqttbridge 1")

@@ -37,15 +37,17 @@ func connectMQTT(host string,username string, password string) MQTT.Client {
 	//create and start a client using the above ClientOptions
 	c := MQTT.NewClient(opts)
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		log.Fatal(token.Error())
+		log.Fatal("failed to connect to MQTT Broker, bailing out ",token.Error())
 		os.Exit(-1)
 	}
 	return c
 }
 
-func pub(cl MQTT.Client, topic string, payload string) {
-	log.Debug("topic: ",topic, " :: ",payload)
+func pub(cl MQTT.Client, topic string, payload string) error {
+	log.Debug("MQTT: ",topic, " <- " ,payload)
 	if token := cl.Publish(topic,1,false,payload) ; token.Wait() && token.Error() != nil {
-		log.Fatal(token.Error())
+		log.Error("failed to publish message to ",topic, " error: ",token.Error())
+		return token.Error()
 	}
+	return nil
 }
