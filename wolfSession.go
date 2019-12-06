@@ -30,6 +30,7 @@ const (
 	authenticateURL    = "https://www.wolf-smartset.com/portal/connect/token2"
 	parameterValuesURL = "https://www.wolf-smartset.com/portal/api/portal/GetParameterValues"
 	createSessionURL   = "https://www.wolf-smartset.com/portal/api/portal/CreateSession"
+	systemListURL 	   = "https://www.wolf-smartset.com/portal/api/portal/GetSystemList"
 )
 
 func getParameterValues(bearerToken string, sessionId int, valueIDList []int64, lastUpdate string, sys System) (ParameterValuesResponse, error) {
@@ -122,10 +123,9 @@ func getAuthToken(username string, password string) (AuthToken, error) {
 }
 
 func getSystemList(bearerToken string) (SystemList, error) {
-	url := "https://www.wolf-smartset.com/portal/api/portal/GetSystemList"
 	data := SystemList{}
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", systemListURL, nil)
 	if err != nil {
 		log.Error(err)
 		return data, err
