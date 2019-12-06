@@ -42,7 +42,9 @@ func getParameterValues(bearerToken string, sessionId int, valueIDList []int64, 
 
 	if err != nil {
 		log.Warn("parmeterValues request failed ",err)
-		res.Body.Close()
+		if res != nil {
+			res.Body.Close()
+		}
 		return response, err
 	}
 	defer res.Body.Close()
