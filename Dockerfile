@@ -4,17 +4,24 @@
 FROM golang:alpine AS builder
 # Install git.
 # Git is required for fetching the dependencies.
-RUN apk update && apk add --no-cache git
+RUN apk update && apk add --no-cache git && apk  --no-cache add ca-certificates
+
 # Create appuser.
 RUN adduser -D -g '' appuser
 WORKDIR $GOPATH/src/wolfmqttbridge
+
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+
+# Assuming the source code is collocated to this Dockerfile
 COPY . .
 # Fetch dependencies.
+
 # Using go get.
-RUN go get -d -v
-# Using go mod.
-# RUN go mod download
-# RUN go mod verify
+#RUN go get -d -v
+
 # Build the binary.
 #RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /go/bin/wolfmqttbridge
 RUN  CGO_ENABLED=0  GOOS=linux  GOARCH=amd64 go build  -ldflags='-w -extldflags "-static" -s' -o /wolfmqttbridge
