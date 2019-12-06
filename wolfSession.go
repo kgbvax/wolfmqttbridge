@@ -33,15 +33,26 @@ func getParameterValues(bearerToken string, sessionId int, valueIDList []int64, 
 		"2019-11-22T19:35:06.7715496Z", false, sessionId}
 	response := ParameterValuesResponse{}
 	url := "https://www.wolf-smartset.com/portal/api/portal/GetParameterValues"
-	payload, _ := json.Marshal(reqPayload)
+	payload, err := json.Marshal(reqPayload)
+	if err!=nil {
+		log.Error("error marshalloing request: ",err)
+		return response,err
+	}
+
 	log.Trace("about to request parameterValues from ",url)
-	req, _ := http.NewRequest("POST", url, bytes.NewReader(payload))
+	req, err := http.NewRequest("POST", url, bytes.NewReader(payload))
+	if err!=nil {
+		log.Error("error creating request " , err)
+
+		return response,err
+
+	}
 	setStdHeader(req, bearerToken, "application/json")
 	log.Trace("header set")
 	res, err := http.DefaultClient.Do(req)
 
 	if err != nil {
-		log.Warn("parmeterValues request failed ",err)
+		log.Error("parmeterValues request failed ",err)
 		if res != nil {
 			res.Body.Close()
 		}
@@ -49,9 +60,15 @@ func getParameterValues(bearerToken string, sessionId int, valueIDList []int64, 
 	}
 	defer res.Body.Close()
 
-	body, _ := ioutil.ReadAll(res.Body)
-
+	body, err := ioutil.ReadAll(res.Body)
+	if err!=nil {
+		log.Error("error reading response ",err)
+		return response,err
+	}
 	err = json.Unmarshal([]byte(body), &response)
+	if err!=nil {
+		log.Error("error unmarshalling response ",err)
+	}
 	return response, err
 }
 
