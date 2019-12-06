@@ -204,7 +204,7 @@ type MqttDiscoveryMsg struct {
 	Unique_id           string `json:"unique_id"`
 	Expire_after	    int    `json:"expire_after"`
 	Qos                 int    `json:"qos"`
-	SwVersion			string `json:"sw_version"`
+	#SwVersion	    string `json:"sw_version"`
 }
 
 func registerHADiscovery(descriptors []ParameterDescriptor, client MQTT.Client, discoveryTopic string) {
