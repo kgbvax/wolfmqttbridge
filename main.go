@@ -204,7 +204,7 @@ type MqttDiscoveryMsg struct {
 	Unique_id           string `json:"unique_id"`
 	Expire_after	    int    `json:"expire_after"`
 	Qos                 int    `json:"qos"`
-	#SwVersion	    string `json:"sw_version"`
+	//SwVersion	    string `json:"sw_version"`
 }
 
 func registerHADiscovery(descriptors []ParameterDescriptor, client MQTT.Client, discoveryTopic string) {
@@ -220,7 +220,7 @@ func registerHADiscovery(descriptors []ParameterDescriptor, client MQTT.Client, 
 		newDisco.Unique_id = wolfPrefix + param.Name
 		newDisco.State_topic = makeTopic(param.Name)
 		newDisco.Qos=2
-		newDisco.SwVersion="1.0"
+		//newDisco.SwVersion="1.0"
 		newDisco.Expire_after=120 //seconds
 		configTopic:=discoPrefix+"/sensor/"+newDisco.Unique_id+"/config"
 		json,err := json.Marshal(newDisco)
