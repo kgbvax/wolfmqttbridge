@@ -62,16 +62,18 @@ func main() {
 		log.SetReportCaller(true)
 	}
 
+	if len(*grayLogAddr) > 0 {
+		hook := graylog.NewAsyncGraylogHook(*grayLogAddr, map[string]interface{}{})
+		//log.SetFormatter(&log.JSONFormatter{})
+		log.AddHook(hook)
+		log.Info("Logging to Graylog: ", *grayLogAddr)
+		defer hook.Flush()
+
+	}
+
 	if *pollInterval < 10 {
 		log.Warn("poll interval is shorter than 10sec. Setting to 10sec to prevent excessive API load")
 		*pollInterval = 10
-	}
-
-	if len(*grayLogAddr) > 0 {
-		log.Info("Logging to Graylog: ", *grayLogAddr)
-		hook := graylog.NewAsyncGraylogHook(*grayLogAddr, map[string]interface{}{})
-		defer hook.Flush()
-		log.AddHook(hook)
 	}
 
 	if wolfPw == nil {
@@ -161,7 +163,7 @@ func doTheHustle(cmd string) {
 
 	case brCmd.FullCommand():
 		{
-			var needsConnection bool = true
+			var needsConnection = true
 
 			var sessId int
 			var system System
@@ -175,6 +177,7 @@ func doTheHustle(cmd string) {
 			} else {
 				log.Debug("connecting to mqtt broker at ", *mqttHost)
 				client = connectMQTT(*mqttHost, *mqttUsername, *mqttPassword)
+				defer client.Disconnect(1500)
 			}
 			var valIdList []int64
 			var params []ParameterDescriptor
