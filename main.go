@@ -228,7 +228,11 @@ func doTheHustle(cmd string) {
 
 								//log.Debug("valueStruct response ", localTopic, "=", value)
 								if !*brReadOnly {
-									pub(client, localTopic, value)
+									err = pub(client, localTopic, value)
+									if err != nil {
+										//log and ignore
+										log.Error("faile to publish to ", localTopic, " error ", err)
+									}
 								}
 							}
 						}
@@ -281,10 +285,16 @@ func registerHADiscovery(descriptors []ParameterDescriptor, client MQTT.Client, 
 		configTopic := discoPrefix + "/sensor/" + newDisco.UniqueId + "/config"
 		discoJson, err := json.Marshal(newDisco)
 		if err != nil {
-			log.Error(err)
+			//internal errer thus fatal
+			log.Fatal("failed to marshal config payload ", newDisco, err)
+			os.Exit(-1)
 		} else {
 			if !*brReadOnly {
-				pub(client, configTopic, string(discoJson))
+				err = pub(client, configTopic, string(discoJson))
+				if err != nil {
+					//log error and ignore
+					log.Error("failed to publish to ", configTopic, " error ", err)
+				}
 			}
 		}
 	}
