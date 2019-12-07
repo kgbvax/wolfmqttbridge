@@ -124,9 +124,8 @@ func getPollParams(d GuiDescription) []ParameterDescriptor {
 
 func printGuiParameters(d GuiDescription) {
 	t := table.NewWriter()
-	//t.SetOutputMirror(os.Stdout)
 
-	t.AppendHeader(table.Row{"Menu", "Tab", "ValueID", "ParameterID", "Name", "Group", "Unit", "Value", "Options"})
+	t.AppendHeader(table.Row{"Menu", "Tab", "ValueID", "ParameterID", "Name", "Group", "Unit", "Value", "(Options)"})
 	for _, menuItem := range d.MenuItems {
 		for _, tabView := range menuItem.TabViews {
 			for _, parameterDescriptor := range tabView.ParameterDescriptors {
@@ -160,5 +159,5 @@ func printGuiParameters(d GuiDescription) {
 		}
 	}
 	t.SetStyle(table.StyleLight)
-	log.Info("GUI Description:\n",t.Render())
+	log.Info("GUI Description:\n", t.Render())
 }

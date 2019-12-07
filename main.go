@@ -32,7 +32,7 @@ import (
 
 var app = kingpin.New("wolfmqttbridge", "Wolf Smartset MQTT Bridge, see github.com/kgbvax/wolfmqttbridge for documentation.")
 var debug = app.Flag("debug", "Enable debug mode. Env: DEBUG").Envar("DEBUG").Short('d').Bool()
-var trace = app.Flag("trace","Enable trace mode. Env: TRACE").Envar("TRACE").Bool()
+var trace = app.Flag("trace", "Enable trace mode. Env: TRACE").Envar("TRACE").Bool()
 var grayLogAddr = app.Flag("graylogGELFAdr", "Address of GELF logging server as 'address:port'. Env: GRAYLOG").Envar("GRAYLOG").Short('g').String()
 var wolfUser = app.Flag("user", "username at wolf-smartset.com. Env: WOLF_USER").Envar("WOLF_USER").String()
 var wolfPw = app.Flag("password", "Password for wolf-smartset.com. Env: WOLF_PW").Envar("WOLF_PW").String()
@@ -43,9 +43,9 @@ var mqttHost = brCmd.Flag("broker", "address of MQTT broker to connect to, e.g. 
 var mqttUsername = brCmd.Flag("mqttUser", "username for mqtt broker. Env: BROKER_USER").Envar("BROKER_USER").String()
 var mqttPassword = brCmd.Flag("mqttPassword", "password for mqtt broker user. Env: BROKER_PW").Envar("BROKER_PW").String()
 var haDiscoveryTopic = brCmd.Flag("haDiscoTopic", "Home Assistant MQTT discovery topic, defaults to 'homeassistant'").Envar("HA_DISCO_TOPIC").Default("homeassistant").String()
-var brReadOnly = brCmd.Flag("ro","Read-Only mode - don't write to MQTT (for testing").Default("false").Bool()
+var brReadOnly = brCmd.Flag("ro", "Read-Only mode - don't write to MQTT (for testing").Default("false").Bool()
 var mqttRootTopic = brCmd.Flag("rooTopic", "root topic, defaults to /wolf").Envar("WOLF_MQTT_ROOT_TOPIC").Default("wolf").String()
-var pollInterval = brCmd.Flag("pollEvery","poll every X seconds. Must be >10, defaults to 20").Default("20").Envar("POLL_EVERY").Int()
+var pollInterval = brCmd.Flag("pollEvery", "poll every X seconds. Must be >10, defaults to 20").Default("20").Envar("POLL_EVERY").Int()
 
 func main() {
 	kingpin.UsageTemplate(kingpin.CompactUsageTemplate).Version("1.0").Author("vax@kgbvax.net")
@@ -55,14 +55,16 @@ func main() {
 
 	if *debug == true {
 		log.SetLevel(log.DebugLevel)
+		log.SetReportCaller(true)
 	}
 	if *trace == true {
 		log.SetLevel(log.TraceLevel)
+		log.SetReportCaller(true)
 	}
 
-	if *pollInterval <10 {
+	if *pollInterval < 10 {
 		log.Warn("poll interval is shorter than 10sec. Setting to 10sec to prevent excessive API load")
-		*pollInterval=10
+		*pollInterval = 10
 	}
 
 	if len(*grayLogAddr) > 0 {
@@ -75,7 +77,6 @@ func main() {
 	if wolfPw == nil {
 		*wolfPw = askPw()
 	}
-
 
 	doTheHustle(cmd)
 }
@@ -95,10 +96,9 @@ func connectWolfSmartset() (AuthToken, int, System, *runner.Task) {
 		os.Exit(ErrSession) //&bail out
 	}
 
-
-	task:= runner.Go ( func(shouldStop runner.S, ) error {
+	task := runner.Go(func(shouldStop runner.S) error {
 		// do setup work
-		defer func(){
+		defer func() {
 			// do tear-down work
 		}()
 		for {
@@ -132,7 +132,7 @@ func connectWolfSmartset() (AuthToken, int, System, *runner.Task) {
 	log.Info("System Name: ", system.Name)
 	log.Info("Gateway ID: ", system.GatewayID)
 	log.Info("Gateway Software Version: ", system.GatewaySoftwareVersion)
-	return aTok, sessId, system,task
+	return aTok, sessId, system, task
 }
 
 // Ask for a user's password
@@ -153,7 +153,7 @@ func doTheHustle(cmd string) {
 	switch cmd {
 	case listParamCmd.FullCommand():
 		{
-			_, _, system, task :=connectWolfSmartset()
+			_, _, system, task := connectWolfSmartset()
 			guiDescription, _ := getGUIDescriptionForGateway(token.AccessToken, system.GatewayID, system.ID)
 			printGuiParameters(guiDescription)
 			task.Stop()
@@ -163,15 +163,14 @@ func doTheHustle(cmd string) {
 		{
 			var needsConnection bool = true
 
-
 			var sessId int
 			var system System
-		    var backgroundRefreshTask *runner.Task
+			var backgroundRefreshTask *runner.Task
 
 			log.Debug("start bridge")
 			lastUpdate := "2019-12-06T18:11:40.3881067Z"
 			var client MQTT.Client
-			if *brReadOnly== true {
+			if *brReadOnly == true {
 				log.Info("Read-only mode, skip MQTT init")
 			} else {
 				log.Debug("connecting to mqtt broker at ", *mqttHost)
@@ -188,7 +187,7 @@ func doTheHustle(cmd string) {
 						backgroundRefreshTask.Stop()
 					}
 
-					token, sessId, system, backgroundRefreshTask = connectWolfSmartset( )
+					token, sessId, system, backgroundRefreshTask = connectWolfSmartset()
 					guiDescription, err = getGUIDescriptionForGateway(token.AccessToken, system.GatewayID, system.ID)
 					printGuiParameters(guiDescription)
 					params = getPollParams(guiDescription)
@@ -206,41 +205,39 @@ func doTheHustle(cmd string) {
 					}
 				}
 
-
-
 				parameterValuesResponse, err := getParameterValues(token.AccessToken, sessId, valIdList, lastUpdate, system)
-				if err!=nil {
-					log.Warn("failed to obtain parameters. attempting reconnect. Error= ",err)
-					needsConnection=true
+				if err != nil {
+					log.Warn("failed to obtain parameters. attempting reconnect. Error= ", err)
+					needsConnection = true
 				} else {
-				lastUpdate = parameterValuesResponse.LastAccess
-				for _, valueStruct := range parameterValuesResponse.Values {
-					found := false
-					for _, param := range params { //join with parameter meta
-						if param.ValueID == valueStruct.ValueID {
-							found = true
-							value := valueStruct.Value
-							if len(param.ListItems) > 0 { // transform according to list item
-								for _, item := range param.ListItems {
-									if item.Value == value {
-										value = item.DisplayText
+					lastUpdate = parameterValuesResponse.LastAccess
+					for _, valueStruct := range parameterValuesResponse.Values {
+						found := false
+						for _, param := range params { //join with parameter meta
+							if param.ValueID == valueStruct.ValueID {
+								found = true
+								value := valueStruct.Value
+								if len(param.ListItems) > 0 { // transform according to list item
+									for _, item := range param.ListItems {
+										if item.Value == value {
+											value = item.DisplayText
+										}
 									}
 								}
-							}
-							localTopic := makeTopic(param.Name)
+								localTopic := makeTopic(param.Name)
 
-							//log.Debug("valueStruct response ", localTopic, "=", value)
-							if (!*brReadOnly) {
-								pub(client, localTopic, value)
+								//log.Debug("valueStruct response ", localTopic, "=", value)
+								if !*brReadOnly {
+									pub(client, localTopic, value)
+								}
 							}
 						}
-					}
-					if found == false {
-						log.Error("valueStruct not found in parameterDescription, valueId=", valueStruct.ValueID)
+						if found == false {
+							log.Error("valueStruct not found in parameterDescription, valueId=", valueStruct.ValueID)
+						}
 					}
 				}
-				}
-				log.Trace("sleeping ",*pollInterval)
+				log.Trace("sleeping ", *pollInterval)
 				time.Sleep(time.Duration(*pollInterval) * time.Second)
 			}
 		}
@@ -249,7 +246,7 @@ func doTheHustle(cmd string) {
 }
 
 func makeTopic(paramName string) string {
-	return *mqttRootTopic+"/"+sanitizeParamName(paramName)+"/state"
+	return *mqttRootTopic + "/" + sanitizeParamName(paramName) + "/state"
 }
 
 func sanitizeParamName(paramName string) string {
@@ -268,7 +265,7 @@ type MqttDiscoveryMsg struct {
 
 func registerHADiscovery(descriptors []ParameterDescriptor, client MQTT.Client, discoveryTopic string) {
 	var wolfPrefix = "wolf-"
-    discoPrefix:="homeassistant"
+	discoPrefix := "homeassistant"
 
 	for _, param := range descriptors {
 		var newDisco = &MqttDiscoveryMsg{}
@@ -278,16 +275,16 @@ func registerHADiscovery(descriptors []ParameterDescriptor, client MQTT.Client, 
 		}
 		newDisco.UniqueId = wolfPrefix + param.Name
 		newDisco.StateTopic = makeTopic(param.Name)
-		newDisco.Qos=2
+		newDisco.Qos = 2
 		//newDisco.SwVersion="1.0"
-		newDisco.ExpireAfter =120 //seconds
-		configTopic:=discoPrefix+"/sensor/"+newDisco.UniqueId +"/config"
-		discoJson,err := json.Marshal(newDisco)
+		newDisco.ExpireAfter = 120 //seconds
+		configTopic := discoPrefix + "/sensor/" + newDisco.UniqueId + "/config"
+		discoJson, err := json.Marshal(newDisco)
 		if err != nil {
 			log.Error(err)
 		} else {
-			if (!*brReadOnly) {
-				pub(client,configTopic,string(discoJson))
+			if !*brReadOnly {
+				pub(client, configTopic, string(discoJson))
 			}
 		}
 	}

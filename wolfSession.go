@@ -30,7 +30,7 @@ const (
 	authenticateURL    = "https://www.wolf-smartset.com/portal/connect/token2"
 	parameterValuesURL = "https://www.wolf-smartset.com/portal/api/portal/GetParameterValues"
 	createSessionURL   = "https://www.wolf-smartset.com/portal/api/portal/CreateSession"
-	systemListURL 	   = "https://www.wolf-smartset.com/portal/api/portal/GetSystemList"
+	systemListURL      = "https://www.wolf-smartset.com/portal/api/portal/GetSystemList"
 )
 
 func getParameterValues(bearerToken string, sessionId int, valueIDList []int64, lastUpdate string, sys System) (ParameterValuesResponse, error) {
@@ -168,7 +168,7 @@ func getGUIDescriptionForGateway(bearerToken string, gatewayId int, systemId int
 		return data, err
 	}
 	defer res.Body.Close()
-	var body, err = ioutil.ReadAll(res.Body)
+	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		log.Error(err)
 		return data, err
