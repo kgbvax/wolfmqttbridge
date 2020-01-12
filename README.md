@@ -9,13 +9,12 @@ When enabled in Home-Assitant (or you are using HASS.IO the Mosquitto broker add
 
 This works with my Wolf CFS20 and a Wolflink Pro, everything else _may_ work or not.
 
-Update rate defaults to 20 seconds (which I hope is acceptable since the Wolf-Smartset polls data every 10 seconds)
+Update rate defaults to 20 seconds (which I hope is acceptable since the Wolf-Smartset web-clients polls data every 10 seconds)
 ## What works
-* Talk to Wolf-Smartset.com portal (re-engineered API, if there is a spec for this)
+* Talk to Wolf-Smartset.com portal (re-engineered API, if there is a spec for this I would be interested)
 * Emit auto-confguration MQTT messages for home-assistant
 
 ## What does not work
-* This currently fails after a while - work in progress ;-)
 * Only one device supported (it takes the first device found in the portal)
 * No direct connect to bridge in the local network - I could not find a spec for this interface
 * This is currently read-only
