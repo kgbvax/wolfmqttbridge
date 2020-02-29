@@ -24,7 +24,7 @@ type ParameterDescriptor struct {
 	ValueID               int64  `json:"ValueId"`
 	SortID                int    `json:"SortId"`
 	SubBundleID           int    `json:"SubBundleId"`
-	ParameterID           int    `json:"ParameterId"`
+	ParameterID           int64  `json:"ParameterId"`
 	IsReadOnly            bool   `json:"IsReadOnly"`
 	NoDataPoint           bool   `json:"NoDataPoint"`
 	IsExpertProtectable   bool   `json:"IsExpertProtectable"`
@@ -49,10 +49,10 @@ type ParameterDescriptor struct {
 	MaxValue                  float64 `json:"MaxValue,omitempty"`
 	StepWidth                 float64 `json:"StepWidth,omitempty"`
 	ChildParameterDescriptors []struct {
-		ValueID                   int    `json:"ValueId"`
+		ValueID                   int64  `json:"ValueId"`
 		SortID                    int    `json:"SortId"`
 		SubBundleID               int    `json:"SubBundleId"`
-		ParameterID               int    `json:"ParameterId"`
+		ParameterID               int64  `json:"ParameterId"`
 		IsReadOnly                bool   `json:"IsReadOnly"`
 		NoDataPoint               bool   `json:"NoDataPoint"`
 		IsExpertProtectable       bool   `json:"IsExpertProtectable"`
