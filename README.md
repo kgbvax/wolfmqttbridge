@@ -1,13 +1,38 @@
-# wolfmqttbridge [![Build Status](https://travis-ci.org/kgbvax/wolfmqttbridge.svg?branch=master)](https://travis-ci.org/kgbvax/wolfmqttbridge)
+# FHEM wolfmqttbridge based on https://github.com/kgbvax/wolfmqttbridge
 
-WOLF Smartset MQTT Bridge (for home-assistant)
+WOLF Smartset MQTT Bridge (for FHEM)
+
+## Install
+
+First you need to install go:
+`sudo apt-get install golang`
+
+Copy the git repository:
+git clone `https://github.com/ste-ta/fhemwolfmqttbridge`
+
+Build the project:
+
+`go build`
+
+Copy the file to /opt/wolfsmartset:
+
+`sudo mkdir /opt/wolfsmartset`
+
+`sudo chmod 755 wolfmqttbridge`  
+
+`sudo cp wolfmqttbridge /opt/wolfsmartset`
+
+Customize init file:
+
+...
+
 
 It periodically fetches current state information 
 from https://www.wolf-smartset.com and publishes this to MQTT - in a way that works with https://www.home-assistant.io.
 
-When enabled in Home-Assitant (or you are using HASS.IO the Mosquitto broker add-on) entities are auto-configured using MQTT discovery.
 
-This works with my Wolf CFS20 and a Wolflink Pro, everything else _may_ work or not.
+
+This works with my Wolf CGS-2L and a Wolflink Pro, everything else _may_ work or not.
 
 Update rate defaults to 20 seconds (which I hope is acceptable since the Wolf-Smartset web-clients polls data every 10 seconds)
 ## What works
