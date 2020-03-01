@@ -1,8 +1,9 @@
 # FHEM wolfmqttbridge based on https://github.com/kgbvax/wolfmqttbridge
 
-WOLF Smartset MQTT Bridge (for FHEM)
+WOLF Smartset MQTT Bridge (for FHEM https://fhem.de/)
 
 ## Install
+Prerequisite: You have a local MQTT server running.
 
 ### First you need to install go:
 `sudo apt-get install golang`
@@ -22,18 +23,43 @@ WOLF Smartset MQTT Bridge (for FHEM)
 
 `sudo cp wolfmqttbridge /opt/wolfsmartset`
 
-### Customize init file:
+### Install service and start:
 
-...
+Change username and passwort and MQTT-Brokersettings if needed in wolfsmartset.init
+Cp wolfsmartset.init to init.d
 
-### start the service
+`sudo cp wolfsmartset.init /etc/init.d/wolfsmartset`
 
-It periodically fetches current state information 
-from https://www.wolf-smartset.com and publishes this to MQTT - in a way that works with https://www.home-assistant.io.
+Start the service:
+`sudo /etc/init.d/wolfsmartset start`
 
 
+### MQTT
 
-This works with my Wolf CGS-2L and a Wolflink Pro, everything else _may_ work or not.
+wolfmqttbridge will create a topic called wolf MQTT with various parameters
+
+## FHEM integration
+
+In order to integrate into FHEM you will need MQTT https://wiki.fhem.de/wiki/MQTT:
+
+### Install MQTT module
+
+ `sudo cpan install Net::MQTT:Simple`
+ 
+ `sudo cpan install Net::MQTT:Constants`
+
+Create MQTT connection:
+
+`define mqtt MQTT 127.0.0.1:1883`
+
+Create Wolf MQTT device:
+	
+`define mywolf MQTT_DEVICE`
+
+Set autocreate to wolftopic:
+`attr mywolf autoSubscribeReadings wolf/+/state`
+
+# Info from original readme
 
 Update rate defaults to 20 seconds (which I hope is acceptable since the Wolf-Smartset web-clients polls data every 10 seconds)
 ## What works
@@ -44,6 +70,7 @@ Update rate defaults to 20 seconds (which I hope is acceptable since the Wolf-Sm
 * Only one device supported (it takes the first device found in the portal)
 * No direct connect to bridge in the local network - I could not find a spec for this interface
 * This is currently read-only
+
 
 # Running
 For running this on the command-line try --help-long
