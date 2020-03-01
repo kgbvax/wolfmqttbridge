@@ -8,7 +8,7 @@ WOLF Smartset MQTT Bridge (for FHEM)
 `sudo apt-get install golang`
 
 ### Copy the git repository:
-git clone `https://github.com/ste-ta/fhemwolfmqttbridge`
+`git clone https://github.com/ste-ta/fhemwolfmqttbridge`
 
 ### Build the project:
 
