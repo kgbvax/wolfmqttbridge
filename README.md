@@ -1,5 +1,7 @@
 # WOLF Smartset MQTT Bridge (for FHEM https://fhem.de/) based on https://github.com/kgbvax/wolfmqttbridge
 
+I was looking for a way to integrate my Wolf heating with FHEM and came along the wolfmqttbridge. I added a init file to make it run as a service and added a describtion how to integrate with FHEM.
+
 ## Install
 Prerequisite: You have a local MQTT server running.
 
@@ -13,7 +15,7 @@ Prerequisite: You have a local MQTT server running.
 
 `go build`
 
-### Copy the file to /opt/wolfsmartset:
+### Copy the executable to /opt/wolfsmartset:
 
 `sudo mkdir /opt/wolfsmartset`
 
@@ -23,9 +25,9 @@ Prerequisite: You have a local MQTT server running.
 
 ### Install service and start:
 
-Change username and passwort and MQTT-Brokersettings if needed in wolfsmartset.init
+Change username and passwort and MQTT-Brokersettings in wolfsmartset.init
 
-`cp wolfsmartset.init to init.d`
+Copy wolfsmartset.init to init.d
 
 `sudo cp wolfsmartset.init /etc/init.d/wolfsmartset`
 
