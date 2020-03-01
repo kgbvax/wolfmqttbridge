@@ -1,6 +1,4 @@
-# FHEM wolfmqttbridge based on https://github.com/kgbvax/wolfmqttbridge
-
-WOLF Smartset MQTT Bridge (for FHEM https://fhem.de/)
+# WOLF Smartset MQTT Bridge (for FHEM https://fhem.de/) based on https://github.com/kgbvax/wolfmqttbridge
 
 ## Install
 Prerequisite: You have a local MQTT server running.
@@ -26,11 +24,13 @@ Prerequisite: You have a local MQTT server running.
 ### Install service and start:
 
 Change username and passwort and MQTT-Brokersettings if needed in wolfsmartset.init
-Cp wolfsmartset.init to init.d
+
+`cp wolfsmartset.init to init.d`
 
 `sudo cp wolfsmartset.init /etc/init.d/wolfsmartset`
 
 Start the service:
+
 `sudo /etc/init.d/wolfsmartset start`
 
 
@@ -57,6 +57,7 @@ Create Wolf MQTT device:
 `define mywolf MQTT_DEVICE`
 
 Set autocreate to wolftopic:
+
 `attr mywolf autoSubscribeReadings wolf/+/state`
 
 # Info from original readme
