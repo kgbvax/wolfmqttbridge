@@ -4,17 +4,17 @@ WOLF Smartset MQTT Bridge (for FHEM)
 
 ## Install
 
-First you need to install go:
+### First you need to install go:
 `sudo apt-get install golang`
 
-Copy the git repository:
+### Copy the git repository:
 git clone `https://github.com/ste-ta/fhemwolfmqttbridge`
 
-Build the project:
+### Build the project:
 
 `go build`
 
-Copy the file to /opt/wolfsmartset:
+### Copy the file to /opt/wolfsmartset:
 
 `sudo mkdir /opt/wolfsmartset`
 
@@ -22,10 +22,11 @@ Copy the file to /opt/wolfsmartset:
 
 `sudo cp wolfmqttbridge /opt/wolfsmartset`
 
-Customize init file:
+### Customize init file:
 
 ...
 
+### start the service
 
 It periodically fetches current state information 
 from https://www.wolf-smartset.com and publishes this to MQTT - in a way that works with https://www.home-assistant.io.
