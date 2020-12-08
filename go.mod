@@ -7,7 +7,7 @@ require (
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/bgentry/speakeasy v0.1.0
 	github.com/cheekybits/is v0.0.0-20150225183255-68e9c0620927 // indirect
-	github.com/eclipse/paho.mqtt.golang v1.2.0
+	github.com/eclipse/paho.mqtt.golang v1.3.0
 	github.com/gemnasium/logrus-graylog-hook v2.0.7+incompatible
 	github.com/go-openapi/strfmt v0.19.3 // indirect
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
@@ -15,6 +15,5 @@ require (
 	github.com/mattn/go-runewidth v0.0.7 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/sirupsen/logrus v1.4.2
-	golang.org/x/net v0.0.0-20191206103017-1ddd1de85cb0 // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 )
