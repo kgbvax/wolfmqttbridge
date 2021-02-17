@@ -14,7 +14,7 @@ require (
 	github.com/matryer/runner v0.0.0-20190427160343-b472a46105b1
 	github.com/mattn/go-runewidth v0.0.7 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
-	github.com/sirupsen/logrus v1.4.2
+	github.com/sirupsen/logrus v1.7.1
 	golang.org/x/net v0.0.0-20191206103017-1ddd1de85cb0 // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 )
