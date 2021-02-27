@@ -12,7 +12,15 @@ const port = 3000
 app.post('/', async (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({
+    bindAddress: "0.0.0.0",
+    args: [
+      "--no-sandbox",
+      "--headless",
+      "--disable-gpu",
+      "--disable-dev-shm-usage",
+    ]
+  });
   const page = await browser.newPage();
   await page.goto('https://www.wolf-smartset.com/');
   await page.type('input[name="Input.Username"]', username, {delay: 20})
