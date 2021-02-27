@@ -18,18 +18,19 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
 	refreshSessionURL  = "https://www.wolf-smartset.com/portal/api/portal/UpdateSession"
-	authenticateURL    = "https://www.wolf-smartset.com/portal/connect/token2"
+	authenticateURL    = "http://localhost:3000"
 	parameterValuesURL = "https://www.wolf-smartset.com/portal/api/portal/GetParameterValues"
-	createSessionURL   = "https://www.wolf-smartset.com/portal/api/portal/CreateSession"
+	createSessionURL   = "https://www.wolf-smartset.com/portal/api/portal/CreateSession2"
 	systemListURL      = "https://www.wolf-smartset.com/portal/api/portal/GetSystemList"
 )
 
@@ -206,8 +207,17 @@ func createSession(bearerToken string) (int, error) {
 	}
 
 	var sessId int
-	_, err = fmt.Fscanf(res.Body, "%d", &sessId)
-
+	//_, err = fmt.Fscanf(res.Body, "%d", &sessId)
+	var data CreateSession2
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		log.Error("error reading response ", err)
+	}
+	err = json.Unmarshal([]byte(body), &data)
+	if err != nil {
+		log.Error("error reading response ", err)
+	}
+	sessId = data.SessionID
 	return sessId, err
 }
 
@@ -261,6 +271,9 @@ func setStdHeader(request *http.Request, bearerToken string, contentType string)
 
 type SessionStr struct {
 	SessionID int `json:"SessionId"`
+}
+type CreateSession2 struct {
+	SessionID int `json:"BrowserSessionId"`
 }
 
 type ParameterValuesRequest struct {

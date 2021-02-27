@@ -17,15 +17,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/bgentry/speakeasy"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	graylog "github.com/gemnasium/logrus-graylog-hook"
 	"github.com/matryer/runner"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"os"
-	"strings"
-	"time"
 )
 
 //import _ "github.com/motemen/go-loghttp/global"
