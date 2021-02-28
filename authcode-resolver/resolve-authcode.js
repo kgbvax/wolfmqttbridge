@@ -21,18 +21,23 @@ app.post('/', async (req, res) => {
       "--disable-dev-shm-usage",
     ]
   });
-  const page = await browser.newPage();
-  await page.goto('https://www.wolf-smartset.com/');
-  await page.type('input[name="Input.Username"]', username, {delay: 20})
-  await page.type('input[name="Input.Password"]', password, {delay: 20})
-  await page.keyboard.press('Enter')
+  try {
+    const page = await browser.newPage();
+    await page.goto('https://www.wolf-smartset.com/');
+    await page.type('input[name="Input.Username"]', username, { delay: 20 })
+    await page.type('input[name="Input.Password"]', password, { delay: 20 })
+    await page.keyboard.press('Enter')
 
-  await page.waitForTimeout( 1000 );
-  const sessionStorage = await page.evaluate(() =>  Object.assign({}, window.sessionStorage))
-  const something = JSON.parse(sessionStorage["oidc.user:https://www.wolf-smartset.com/idsrv:smartset.web"])
-  await browser.close();
-  console.log(something)
-  res.send(something)
+    await page.waitForTimeout(5000);
+    const sessionStorage = await page.evaluate(() => Object.assign({}, window.sessionStorage))
+    const something = JSON.parse(sessionStorage["oidc.user:https://www.wolf-smartset.com/idsrv:smartset.web"])
+    console.log(something)
+    res.send(something)
+  } catch (e) {
+    console.log(e);
+  } finally {
+    await browser.close();
+  }
 })
 
 app.listen(port, () => {
