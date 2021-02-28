@@ -29,15 +29,27 @@ RUN  CGO_ENABLED=0  GOOS=linux  GOARCH=amd64 go build  -ldflags='-w -extldflags 
 ############################
 # STEP 2 build a small image
 ############################
-FROM scratch
+FROM zenika/alpine-chrome:with-node
 # Import the user and group files from the builder.
-COPY --from=builder /etc/passwd /etc/passwd
+#COPY --from=builder /etc/passwd /etc/passwd
 # Copy our static executable.
-COPY --from=builder /wolfmqttbridge /wolfmqttbridge
+COPY --chown=chrome  --from=builder /wolfmqttbridge /wolfmqttbridge
 
 #COPY certs roots required to validate outbound HTTPS requests
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+#COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+WORKDIR /
+
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD 1
+ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/chromium-browser
+COPY --chown=chrome ./authcode-resolver/ /authcode-resolver
+COPY --chown=chrome ./container-start.sh /
+RUN cd /authcode-resolver && npm install
+
 # Use an unprivileged user.
-USER appuser
+USER chrome
 # Run the binary.
-ENTRYPOINT ["/wolfmqttbridge"]
+ENTRYPOINT ["/container-start.sh"]
+
+
+
